@@ -41,11 +41,7 @@ U32 IHDRHieght(FILE* png_n){
     U8* buffer = malloc(sizeof(char)*4);
     fseek(png_n, 20, SEEK_SET);
     fread(buffer, sizeof(char)*4, 1, png_n);
-//    for (int i=0; i<4; ++i){
-//        printf("%x ", buffer[i]);
-//    }
     U32 height = buffer[0] << 24 | buffer[1] << 16 | buffer[2] <<8 | buffer[3];
-    printf("%d\n", height);
     return height;
 }
 
@@ -79,12 +75,6 @@ U8* IDATDataFieldUncom(FILE* png_n, U64 *len_inf){
     result = fread(tmp_buffer,len_def, 1 , png_n);
     gp_buf_inf = malloc(sizeof(char)*10000000);
     ret = mem_inf(gp_buf_inf, len_inf, tmp_buffer, len_def);
-    if (ret == 0) { /* success */
-        printf("compressed len = %ld, len_inf = %lu\n",
-               len_def, *len_inf);
-    } else { /* failure */
-        fprintf(stderr,"mem_def failed. ret = %d.\n", ret);
-    }
     return gp_buf_inf;
 }
 
@@ -129,7 +119,7 @@ int main(int argc, char *argv[])
     
     
     if (argc == 1) {
-        fprintf(stderr, "Usage: %s <directory name>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <PNG name>\n", argv[0]);
         exit(1);
     }
     
@@ -188,9 +178,6 @@ int main(int argc, char *argv[])
     U8* tmp_crc_buffer = malloc(sizeof(char)*17);
     memcpy(tmp_crc_buffer, PNG_buf->p_IHDR->type, sizeof(char)*4);
     memcpy(tmp_crc_buffer+4, PNG_buf->p_IHDR->p_data, sizeof(char)*13);
-    for (i=0; i<17; ++i){
-        printf("%x ", tmp_crc_buffer[i]);
-    }
     
     PNG_buf->p_IHDR->crc = htonl(crc(tmp_crc_buffer, sizeof(char)*17));
     
@@ -224,10 +211,6 @@ int main(int argc, char *argv[])
     
     
 //write file
-    for (i = 0; i<8; ++i){
-        printf("%x ", header_buf[i]);
-    }
-    printf("\n");
     
     fwrite(header_buf, sizeof(char)*8, 1, fp);
     
@@ -243,19 +226,12 @@ int main(int argc, char *argv[])
     
     fseek(fp, 8, SEEK_SET);
     fwrite(PNG_buf->p_IHDR, sizeof(char)*8 , 1 , fp );
-    printf("%ld\n", ftell(fp));
     fwrite(PNG_buf->p_IHDR->p_data, sizeof(char)*13 , 1 , fp );
-    printf("%ld\n", ftell(fp));
     fwrite(&PNG_buf->p_IHDR->crc, sizeof(char)*4 , 1 , fp );
-    printf("%ld\n", ftell(fp));
     fwrite(PNG_buf->p_IDAT, sizeof(char)*8 , 1 , fp );
-    printf("%ld\n", ftell(fp));
     fwrite(PNG_buf->p_IDAT->p_data, sizeof(char)*len_def, 1 , fp );
-    printf("%ld\n", ftell(fp));
     fwrite(&PNG_buf->p_IDAT->crc, sizeof(char)*4 , 1 , fp );
-    printf("%ld\n", ftell(fp));
     fwrite(PNG_buf->p_IEND, sizeof(char)*8 , 1 , fp );
-    printf("%ld\n", ftell(fp));
     fwrite(&PNG_buf->p_IEND->crc, sizeof(char)*4 , 1 , fp );
 //
     fclose(fp);
