@@ -32,7 +32,7 @@ data_IHDR_p WrongDiIHDR(FILE* png_n){
     fseek(png_n, 17, SEEK_SET);
     data_IHDR_p png_IHDR_data;
     U8* buffer = malloc(sizeof(char)*25);
-    fread(buffer, 1, sizeof(buffer), png_n);
+    fread(buffer, 1, sizeof(char)*25, png_n);
     png_IHDR_data = (data_IHDR_p)buffer;
     return png_IHDR_data;
 }
@@ -41,18 +41,14 @@ U32 IHDRHieght(FILE* png_n){
     U8* buffer = malloc(sizeof(char)*4);
     fseek(png_n, 20, SEEK_SET);
     fread(buffer, sizeof(char)*4, 1, png_n);
-//    for (int i=0; i<4; ++i){
-//        printf("%x ", buffer[i]);
-//    }
     U32 height = buffer[0] << 24 | buffer[1] << 16 | buffer[2] <<8 | buffer[3];
-    printf("%d\n", height);
     return height;
 }
 
 U32 IDATLength(FILE* png_n){
     U8* buffer = malloc(sizeof(char)*4);
     fseek(png_n, 33, SEEK_SET);
-    fread(buffer, sizeof(buffer), 1, png_n);
+    fread(buffer, sizeof(char)*4, 1, png_n);
     
     return buffer[0] << 24 | buffer[1] << 16 | buffer[2] <<8 | buffer[3];
 }
@@ -71,21 +67,14 @@ U8* IDATDataFieldUncom(FILE* png_n, U64 *len_inf){
     
     fseek(png_n, 33, SEEK_SET);
     tmp_buffer = malloc(sizeof(char)*(4));
-    fread(tmp_buffer, sizeof(tmp_buffer), 1, png_n);
+    fread(tmp_buffer, sizeof(char)*4, 1, png_n);
     len_def = tmp_buffer[0] << 24 | tmp_buffer[1] << 16 | tmp_buffer[2] <<8 | tmp_buffer[3];
     len_def = (U32)len_def;
     fseek(png_n, 41, SEEK_SET);
-    free(tmp_buffer);
     tmp_buffer = malloc(sizeof(char)*(len_def));
     result = fread(tmp_buffer,len_def, 1 , png_n);
     gp_buf_inf = malloc(sizeof(char)*10000000);
     ret = mem_inf(gp_buf_inf, len_inf, tmp_buffer, len_def);
-    if (ret == 0) { /* success */
-        printf("compressed len = %ld, len_inf = %lu\n",
-               len_def, *len_inf);
-    } else { /* failure */
-        fprintf(stderr,"mem_def failed. ret = %d.\n", ret);
-    }
     return gp_buf_inf;
 }
 
@@ -130,7 +119,7 @@ int main(int argc, char *argv[])
     
     
     if (argc == 1) {
-        fprintf(stderr, "Usage: %s <directory name>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <PNG name>\n", argv[0]);
         exit(1);
     }
     
@@ -189,21 +178,20 @@ int main(int argc, char *argv[])
     U8* tmp_crc_buffer = malloc(sizeof(char)*17);
     memcpy(tmp_crc_buffer, PNG_buf->p_IHDR->type, sizeof(char)*4);
     memcpy(tmp_crc_buffer+4, PNG_buf->p_IHDR->p_data, sizeof(char)*13);
-    for (i=0; i<17; ++i){
-        printf("%x ", tmp_crc_buffer[i]);
-    }
     
     PNG_buf->p_IHDR->crc = htonl(crc(tmp_crc_buffer, sizeof(char)*17));
     
 
 //Compress new data
 
-    U8* gp_buf_def = malloc(sizeof(char)*1000000);
+    U8* gp_buf_def = malloc(sizeof(char)*10000000);
     U8* tmp_IDATdata_buffer;
     tmp_IDATdata_buffer = malloc(sizeof(char)*IDAT_length);
     memcpy(tmp_IDATdata_buffer, IHDR_data_buf_list[0], sizeof(char)*IDAT_length_list[0]);
+    U32 offset = 0;
     for (i = 1; i<argc-1; ++i){
-        memcpy(tmp_IDATdata_buffer+IDAT_length_list[i], IHDR_data_buf_list[i], sizeof(char)*IDAT_length_list[i]);
+        offset +=IDAT_length_list[i-1];
+        memcpy(tmp_IDATdata_buffer + offset, IHDR_data_buf_list[i], IDAT_length_list[i]);
     }
      ret = mem_def(gp_buf_def, &len_def, tmp_IDATdata_buffer, IDAT_length, Z_DEFAULT_COMPRESSION);
     
@@ -223,10 +211,6 @@ int main(int argc, char *argv[])
     
     
 //write file
-    for (i = 0; i<8; ++i){
-        printf("%x ", header_buf[i]);
-    }
-    printf("\n");
     
     fwrite(header_buf, sizeof(char)*8, 1, fp);
     
@@ -240,6 +224,7 @@ int main(int argc, char *argv[])
     fclose(png_0);
     
     
+    fseek(fp, 8, SEEK_SET);
     fwrite(PNG_buf->p_IHDR, sizeof(char)*8 , 1 , fp );
     fwrite(PNG_buf->p_IHDR->p_data, sizeof(char)*13 , 1 , fp );
     fwrite(&PNG_buf->p_IHDR->crc, sizeof(char)*4 , 1 , fp );
