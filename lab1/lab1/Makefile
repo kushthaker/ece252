@@ -1,33 +1,17 @@
+CC=gcc
+CFLAGS=-I.
 
-# Makefile, ECE252  
-# Yiqing Huang, 2018/11/04
+all: findpng catpng
 
-CC = gcc       # compiler
-CFLAGS = -Wall -g -std=c99 # compilation flg 
-LD = gcc       # linker
-LDFLAGS = -g   # debugging symbols in build
-LDLIBS = -lz   # link with libz
+findpng: findpng.o 
+	$(CC) -o findpng findpng.o
 
-# For students 
-LIB_UTIL = zutil.o crc.o
-SRCS   = catpng.c crc.c zutil.c
-OBJS   = catpng.o $(LIB_UTIL) 
+catpng: catpng.o zutil.o crc.o
+	$(CC) -o -lz catpng catpng.o zutil.o crc.o
 
-TARGETS= findpng catpng
-
-all: ${TARGETS}
-
-catpng.out: $(OBJS) 
-	$(LD) -o $@ $^ $(LDLIBS) $(LDFLAGS) 
-
-%.o: %.c 
-	$(CC) $(CFLAGS) -c $< 
-
-%.d: %.c
-	gcc -MM -MF $@ $<
-
--include $(SRCS:.c=.d)
-
-.PHONY: clean
+.c.o:
+	$(CC) $(CFLAGS) -c $<
+  
 clean:
-	rm -f *.d *.o $(TARGETS) 
+	rm *.o findpng catpng
+
