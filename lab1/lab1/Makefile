@@ -11,7 +11,7 @@ catpng: catpng.o zutil.o crc.o
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
-
+  
 clean:
 	rm *.o findpng catpng
 
