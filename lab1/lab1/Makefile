@@ -13,12 +13,12 @@ LIB_UTIL = zutil.o crc.o
 SRCS   = main.c crc.c zutil.c
 OBJS   = main.o $(LIB_UTIL) 
 
-TARGETS= main.out 
+TARGETS= findpng catpng
 
 all: ${TARGETS}
 
-main.out: $(OBJS) 
-	$(LD) -o $@ $^ $(LDLIBS) $(LDFLAGS) 
+# main.out: $(OBJS) 
+# 	$(LD) -o $@ $^ $(LDLIBS) $(LDFLAGS) 
 
 %.o: %.c 
 	$(CC) $(CFLAGS) -c $< 

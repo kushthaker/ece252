@@ -1,4 +1,4 @@
-/**
+    /**
  * @brief  micros and structures for a simple PNG file 
  * @author yqhuang@uwaterloo.ca
  */
