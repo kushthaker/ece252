@@ -32,7 +32,7 @@ data_IHDR_p WrongDiIHDR(FILE* png_n){
     fseek(png_n, 17, SEEK_SET);
     data_IHDR_p png_IHDR_data;
     U8* buffer = malloc(sizeof(char)*25);
-    fread(buffer, 1, sizeof(buffer), png_n);
+    fread(buffer, 1, sizeof(char)*25, png_n);
     png_IHDR_data = (data_IHDR_p)buffer;
     return png_IHDR_data;
 }
@@ -52,7 +52,7 @@ U32 IHDRHieght(FILE* png_n){
 U32 IDATLength(FILE* png_n){
     U8* buffer = malloc(sizeof(char)*4);
     fseek(png_n, 33, SEEK_SET);
-    fread(buffer, sizeof(buffer), 1, png_n);
+    fread(buffer, sizeof(char)*4, 1, png_n);
     
     return buffer[0] << 24 | buffer[1] << 16 | buffer[2] <<8 | buffer[3];
 }
@@ -71,11 +71,10 @@ U8* IDATDataFieldUncom(FILE* png_n, U64 *len_inf){
     
     fseek(png_n, 33, SEEK_SET);
     tmp_buffer = malloc(sizeof(char)*(4));
-    fread(tmp_buffer, sizeof(tmp_buffer), 1, png_n);
+    fread(tmp_buffer, sizeof(char)*4, 1, png_n);
     len_def = tmp_buffer[0] << 24 | tmp_buffer[1] << 16 | tmp_buffer[2] <<8 | tmp_buffer[3];
     len_def = (U32)len_def;
     fseek(png_n, 41, SEEK_SET);
-    free(tmp_buffer);
     tmp_buffer = malloc(sizeof(char)*(len_def));
     result = fread(tmp_buffer,len_def, 1 , png_n);
     gp_buf_inf = malloc(sizeof(char)*10000000);
@@ -198,12 +197,14 @@ int main(int argc, char *argv[])
 
 //Compress new data
 
-    U8* gp_buf_def = malloc(sizeof(char)*1000000);
+    U8* gp_buf_def = malloc(sizeof(char)*10000000);
     U8* tmp_IDATdata_buffer;
     tmp_IDATdata_buffer = malloc(sizeof(char)*IDAT_length);
     memcpy(tmp_IDATdata_buffer, IHDR_data_buf_list[0], sizeof(char)*IDAT_length_list[0]);
+    U32 offset = 0;
     for (i = 1; i<argc-1; ++i){
-        memcpy(tmp_IDATdata_buffer+IDAT_length_list[i], IHDR_data_buf_list[i], sizeof(char)*IDAT_length_list[i]);
+        offset +=IDAT_length_list[i-1];
+        memcpy(tmp_IDATdata_buffer + offset, IHDR_data_buf_list[i], IDAT_length_list[i]);
     }
      ret = mem_def(gp_buf_def, &len_def, tmp_IDATdata_buffer, IDAT_length, Z_DEFAULT_COMPRESSION);
     
@@ -240,13 +241,21 @@ int main(int argc, char *argv[])
     fclose(png_0);
     
     
+    fseek(fp, 8, SEEK_SET);
     fwrite(PNG_buf->p_IHDR, sizeof(char)*8 , 1 , fp );
+    printf("%ld\n", ftell(fp));
     fwrite(PNG_buf->p_IHDR->p_data, sizeof(char)*13 , 1 , fp );
+    printf("%ld\n", ftell(fp));
     fwrite(&PNG_buf->p_IHDR->crc, sizeof(char)*4 , 1 , fp );
+    printf("%ld\n", ftell(fp));
     fwrite(PNG_buf->p_IDAT, sizeof(char)*8 , 1 , fp );
+    printf("%ld\n", ftell(fp));
     fwrite(PNG_buf->p_IDAT->p_data, sizeof(char)*len_def, 1 , fp );
+    printf("%ld\n", ftell(fp));
     fwrite(&PNG_buf->p_IDAT->crc, sizeof(char)*4 , 1 , fp );
+    printf("%ld\n", ftell(fp));
     fwrite(PNG_buf->p_IEND, sizeof(char)*8 , 1 , fp );
+    printf("%ld\n", ftell(fp));
     fwrite(&PNG_buf->p_IEND->crc, sizeof(char)*4 , 1 , fp );
 //
     fclose(fp);
